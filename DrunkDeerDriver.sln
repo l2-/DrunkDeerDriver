@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.9.34728.123
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DrunkDeerDriver", "DrunkDeerDriver.csproj", "{480BE61A-9AC3-4556-9313-FCCE6FE3C642}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "App", "App\App.csproj", "{5B1F59E6-2E24-49BD-89DB-3DB0AD6B8ACA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Driver", "Driver\Driver.csproj", "{D1993CDD-5BBC-4CBA-9D7A-3B9C55CC3838}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,10 +13,14 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{480BE61A-9AC3-4556-9313-FCCE6FE3C642}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{480BE61A-9AC3-4556-9313-FCCE6FE3C642}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{480BE61A-9AC3-4556-9313-FCCE6FE3C642}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{480BE61A-9AC3-4556-9313-FCCE6FE3C642}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5B1F59E6-2E24-49BD-89DB-3DB0AD6B8ACA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5B1F59E6-2E24-49BD-89DB-3DB0AD6B8ACA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5B1F59E6-2E24-49BD-89DB-3DB0AD6B8ACA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5B1F59E6-2E24-49BD-89DB-3DB0AD6B8ACA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D1993CDD-5BBC-4CBA-9D7A-3B9C55CC3838}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D1993CDD-5BBC-4CBA-9D7A-3B9C55CC3838}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D1993CDD-5BBC-4CBA-9D7A-3B9C55CC3838}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D1993CDD-5BBC-4CBA-9D7A-3B9C55CC3838}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

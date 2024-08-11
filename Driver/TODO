@@ -1,0 +1,7 @@
+// TODO
+// keep app running in tray with little icon? (profile first letter or index in the icon?)
+// read profiles from the export
+// listen to hotkey and change profile based on it
+// change profile based on app in foreground
+// change RT and turbo based on profile
+// change lighting based on active profile? Need to link profiles together somehow?

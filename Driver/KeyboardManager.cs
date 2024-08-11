@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DrunkDeerDriver;
+namespace Driver;
 
 public sealed record KeyboardFilter
 {
@@ -22,7 +22,9 @@ public sealed class KeyboardManager : IDisposable
         new KeyboardFilter { VendorId = 0x05ac, ProductId = 0x024f, Usage = 0, UsagePage = 0xff00 },
         new KeyboardFilter { VendorId = 0x352d, ProductId = 0x2391, Usage = 0, UsagePage = 0xff00 }
     ];
+
     public static readonly KeyboardManager Instance = new();
+
     public HidDevice? Keyboard { get; private set; }
 
     KeyboardManager() { Keyboard = FindKeyboard(); Register(); }
@@ -34,7 +36,7 @@ public sealed class KeyboardManager : IDisposable
         Keyboard = FindKeyboard();
     }
 
-    private HidDevice? FindKeyboard()
+    private static HidDevice? FindKeyboard()
     {
         return DeviceList.Local.GetHidDevices().FirstOrDefault(IsDrunkDeerKeyboard);
     }
@@ -55,5 +57,12 @@ public sealed class KeyboardManager : IDisposable
     {
         Unregister();
         Keyboard = null;
+    }
+
+    public bool IsConnected()
+    {
+        if (Keyboard is null) return false;
+        using var stream = Keyboard.Open();
+        return stream.Ping();
     }
 }
