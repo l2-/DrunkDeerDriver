@@ -12,6 +12,18 @@ public static class HidDeviceExtensions
     public static string PacketToString(this byte[] packet)
         => string.Format("[{0}]", string.Join(",", packet.Select(b => string.Format("{0:X2}", b))));
 
+    public static bool WritePacket(this HidStream stream, byte[][] packets)
+    {
+        foreach (var p in packets)
+        {
+            if (!stream.WritePacket(p))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public static bool WritePacket(this HidStream stream, byte[] packet)
     {
         if (packet.Length < 1) return false;

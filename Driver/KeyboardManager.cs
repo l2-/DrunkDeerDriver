@@ -1,9 +1,4 @@
 ﻿using HidSharp;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Driver;
 
@@ -23,11 +18,9 @@ public sealed class KeyboardManager : IDisposable
         new KeyboardFilter { VendorId = 0x352d, ProductId = 0x2391, Usage = 0, UsagePage = 0xff00 }
     ];
 
-    public static readonly KeyboardManager Instance = new();
-
     public HidDevice? Keyboard { get; private set; }
 
-    KeyboardManager() { Keyboard = FindKeyboard(); Register(); }
+    public KeyboardManager() { Keyboard = FindKeyboard(); Register(); }
 
     private void OnDeviceListChanged(object? sender, DeviceListChangedEventArgs e)
     {
