@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Windows;
 using WpfApp.Components;
+using WpfApp.Hooks;
 using WpfApp.Profile;
 using Application = System.Windows.Application;
 
@@ -13,7 +14,8 @@ namespace WpfApp
     /// </summary>
     public partial class App : Application
     {
-        ServiceProvider serviceProvider;
+        private static ServiceProvider? serviceProvider;
+        public static ServiceProvider ServiceProvider => serviceProvider ?? throw new NullReferenceException();
 
         public App()
         {
@@ -26,13 +28,13 @@ namespace WpfApp
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
-            var mainWindow = serviceProvider.GetRequiredService<MainWindow>();
+            var mainWindow = ServiceProvider.GetRequiredService<MainWindow>();
             mainWindow.Show();
         }
 
-        public void Application_Exit()
+        public static void Application_Exit()
         {
-            var icon = serviceProvider.GetRequiredService<TrayIcon>();
+            var icon = ServiceProvider.GetRequiredService<TrayIcon>();
             icon?.Dispose();
         }
     }
@@ -41,6 +43,7 @@ namespace WpfApp
     {
         public static void ConfigureServices(this IServiceCollection services)
         {
+            services.AddSingleton<WinEventHook>();
             services.AddSingleton<MainWindow>();
             services.AddSingleton<ProfileManager>();
             services.AddSingleton<TrayIcon>();

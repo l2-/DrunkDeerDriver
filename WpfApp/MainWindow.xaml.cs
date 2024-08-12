@@ -1,14 +1,12 @@
 ﻿using Driver;
-using IWshRuntimeLibrary;
-using System.Diagnostics;
+using System.Collections.Specialized;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Interop;
-using System.Windows.Media;
 using WpfApp.Components;
-using WpfApp.GlobalKeyHook;
+using WpfApp.Extensions;
+using WpfApp.Hooks;
 using WpfApp.Profile;
 using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
 
@@ -22,17 +20,33 @@ namespace WpfApp
         public static bool ShouldStartMinimized { get; set; } = false;
         private readonly Dictionary<int, KeyHandler> handlers = [];
         private readonly ProfileManager ProfileManager;
+        private readonly WinEventHook WinEventHook;
+        private ProcessSelector? processSelectorWindow;
 
-        public MainWindow(ProfileManager profileManager, TrayIcon icon)
+        public MainWindow(ProfileManager profileManager, WinEventHook winEventHook, TrayIcon icon)
         {
+            WinEventHook = winEventHook;
             ProfileManager = profileManager;
             InitializeComponent();
             icon.DoubleClick = () => Restore();
         }
 
+        protected override void OnSourceInitialized(EventArgs e)
+        {
+            base.OnSourceInitialized(e);
+            DiscoverProfiles();
+            RegisterKeyHandler();
+
+            StartOnWindowsStartupToggle.IsChecked = StartupShortcutHelper.StartupFileExists();
+            StartOnWindowsStartupToggle.Click += OnCheckChanged;
+
+            dataGrid.ContextMenu = CreateDatagridContextMenu();
+
+            WinEventHook.WinEventHookHandler += OnWinEventHook;
+        }
+
         private void RefreshDataGrid()
         {
-            CollectionViewSource.GetDefaultView(dataGrid.ItemsSource).Refresh();
             dataGrid.Columns.First().Width = 0;
             var col = dataGrid.Columns.First(c => c.Header.Equals("Process triggers"));
             col.Width = DataGridLength.SizeToCells;
@@ -46,19 +60,21 @@ namespace WpfApp
             ProfileManager.PushCurrentProfile();
         }
 
-        private void ProfileCollectionChanged(int index, ProfileItem item)
+        private void ProfilesChanged(int index, ProfileItem item)
         {
             RefreshDataGrid();
         }
 
-        protected override void OnSourceInitialized(EventArgs e)
+        private void DiscoverProfiles()
         {
-            base.OnSourceInitialized(e);
-
             ProfileManager.CurrentProfileChanged += ProfileChanged;
-            ProfileManager.ProfileCollectionChanged += ProfileCollectionChanged;
             dataGrid.ItemsSource = ProfileManager.Profiles;
+            ProfileManager.ProfileCollectionChanged += ProfilesChanged;
             ProfileManager.DiscoverProfiles();
+        }
+
+        private void RegisterKeyHandler()
+        {
 
             var windowHandle = new WindowInteropHelper(this).Handle;
             var source = HwndSource.FromHwnd(windowHandle);
@@ -72,9 +88,43 @@ namespace WpfApp
             {
                 handler.Register();
             }
+        }
 
-            StartOnWindowsStartupToggle.IsChecked = StartupShortcutHelper.StartupFileExists();
-            StartOnWindowsStartupToggle.Click += OnCheckChanged;
+        private ContextMenu CreateDatagridContextMenu()
+        {
+            var menu = new ContextMenu();
+            var removeItem = new MenuItem() { Header = "Remove" };
+            removeItem.Click += OnRemoveClicked;
+            menu.Items.Add(removeItem);
+
+            void OnRemoveClicked(object sender, RoutedEventArgs e)
+            {
+                if (menu.PlacementTarget is DataGrid grid)
+                {
+                    foreach (var selectedCell in grid.SelectedCells)
+                    {
+                        if (selectedCell.Item is ProfileItem item)
+                        {
+                            ProfileManager.RemoveProfileItem(item);
+                        }
+                    }
+                }
+            }
+            return menu;
+        }
+
+        private void OnWinEventHook(object? sender, WinEventHookEventArgs e)
+        {
+            var path = e.Process.GetPathFromProcessId();
+            var profileToSwitchTo = ProfileManager.Profiles.FirstOrDefault(p => p.ProcessTriggers.Any(pt => pt.Equals(path, StringComparison.OrdinalIgnoreCase)));
+            if (profileToSwitchTo is { } profile)
+            {
+                ProfileManager.SwitchTo(profile);
+            }
+            else if (ProfileManager.Profiles.FirstOrDefault(p => p.IsDefault) is { } defaultProfile)
+            {
+                ProfileManager.SwitchTo(defaultProfile);
+            }
         }
 
         protected override void OnClosed(EventArgs e)
@@ -83,6 +133,7 @@ namespace WpfApp
             {
                 handler.Unregiser();
             }
+            processSelectorWindow?.Close();
             base.OnClosed(e);
         }
 
@@ -92,7 +143,8 @@ namespace WpfApp
             var dialog = new OpenFileDialog
             {
                 DefaultExt = ".json", // Default file extension
-                Filter = "Text documents (.json)|*.json" // Filter files by extension
+                Filter = "Text documents (.json)|*.json", // Filter files by extension
+                Multiselect = true,
             };
 
             // Show open file dialog box
@@ -101,9 +153,10 @@ namespace WpfApp
             // Process open file dialog box results
             if (result == true)
             {
-                // Open document
-                string path = dialog.FileName;
-                ProfileManager.ImportProfile(path);
+                foreach (var path in dialog.FileNames)
+                {
+                    ProfileManager.ImportProfile(path);
+                }
             }
         }
 
@@ -142,12 +195,25 @@ namespace WpfApp
             StartupShortcutHelper.OnCheckChanged(StartOnWindowsStartupToggle.IsChecked ?? false);
         }
 
+        private void HandleStoredProcessesCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            if (processSelectorWindow is { } window)
+            {
+                window.ProfileItem.ProcessTriggers = window.StoredProcesses.Select(pr => pr.ProcessPath).ToArray();
+            }
+        }
+
         private void Button_Click(object sender, RoutedEventArgs e)
         {
             if (sender is System.Windows.Controls.Button button && button.DataContext is ProfileItem profileItem)
             {
-                var window = new ProcessSelector();
-                window.Show();
+                processSelectorWindow?.Close();
+                processSelectorWindow = null;
+                processSelectorWindow = new ProcessSelector(profileItem);
+                processSelectorWindow.SetStoredProcesses(profileItem.ProcessTriggers);
+                // Bind after creating the collection
+                processSelectorWindow.StoredProcesses.CollectionChanged += HandleStoredProcessesCollectionChanged;
+                processSelectorWindow.Show();
             }
         }
     }

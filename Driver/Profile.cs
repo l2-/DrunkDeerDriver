@@ -1,11 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
+﻿using System.ComponentModel;
 using System.Text.Json.Serialization;
-using System.Threading.Tasks;
 
 namespace Driver;
 
@@ -33,7 +27,7 @@ public record ProfileItem : INotifyPropertyChanged
     [JsonIgnore]
     private bool isDefault = false;
     [JsonIgnore]
-    private string processTriggers = string.Empty;
+    private string[] processTriggers = [];
     [JsonIgnore]
     private Profile? profile;
 
@@ -61,7 +55,7 @@ public record ProfileItem : INotifyPropertyChanged
         set { SetField(ref isDefault, value, nameof(IsDefault)); }
     }
 
-    public string ProcessTriggers
+    public string[] ProcessTriggers
     {
         get { return processTriggers; }
         set { SetField(ref processTriggers, value, nameof(ProcessTriggers)); }

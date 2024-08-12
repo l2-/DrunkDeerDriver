@@ -24,6 +24,6 @@ public partial class Program
         App app = new();
         app.InitializeComponent();
         app.Run();
-        app.Application_Exit();
+        App.Application_Exit();
     }
 }

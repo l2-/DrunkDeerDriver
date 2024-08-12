@@ -8,7 +8,7 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Interop;
 
-namespace WpfApp.GlobalKeyHook;
+namespace WpfApp.Hooks;
 
 public sealed partial class KeyHandler
 {

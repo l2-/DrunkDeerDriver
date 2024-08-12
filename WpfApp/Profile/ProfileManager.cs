@@ -1,18 +1,20 @@
 ﻿using Driver;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Data;
 using System.IO;
 using System.Text.Json;
+using WpfApp.Extensions;
 using MessageBox = System.Windows.Forms.MessageBox;
 
 namespace WpfApp.Profile;
 
 public sealed class ProfileManager(KeyboardManager keyboardManager)
 {
-    public List<ProfileItem> Profiles { get; private set; } = [];
+    public ObservableCollection<ProfileItem> Profiles { get; private set; } = [];
     public List<Tuple<ProfileItem, string>> ProfileFileNames { get; private set; } = [];
     private readonly JsonSerializerOptions options = new() { PropertyNameCaseInsensitive = true, WriteIndented = true };
-    private readonly string profileDir = "profiles";
+    private readonly string profileDir = Path.Combine(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), Path.GetFileNameWithoutExtension(Environment.ProcessPath ?? "")), "profiles");
     private readonly KeyboardManager keyboardManager = keyboardManager;
     private int currentIndex = -1;
     public int CurrentIndex
@@ -52,13 +54,18 @@ public sealed class ProfileManager(KeyboardManager keyboardManager)
     private ProfileItem? FromJsonFile(string path)
     {
         var text = File.ReadAllText(path);
-        var profile = JsonSerializer.Deserialize<ProfileItem>(text, options);
-        if (profile != null)
+        try
         {
-            profile.Name = Path.GetFileNameWithoutExtension(path);
-            profile.IsDirty = false;
+            var profile = JsonSerializer.Deserialize<ProfileItem>(text, options);
+            if (profile != null)
+            {
+                profile.Name = Path.GetFileNameWithoutExtension(path);
+                profile.IsDirty = false;
+            }
+            return profile;
         }
-        return profile;
+        catch (JsonException) { Console.WriteLine("Failed to deserialize profile file at {0}", path); }
+        return null;
     }
 
     public void ImportProfile(string path)
@@ -75,6 +82,7 @@ public sealed class ProfileManager(KeyboardManager keyboardManager)
                 IsDirty = false
             };
             Save(profileItem);
+            profileItem.PropertyChanged += ProfileItemChanged;
             Profiles.Add(profileItem);
             ProfileCollectionChanged?.Invoke(Profiles.Count - 1, profileItem);
         }
@@ -137,11 +145,24 @@ public sealed class ProfileManager(KeyboardManager keyboardManager)
     {
         var quickSwitchProfiles = Profiles.Where(p => p.SelectedForQuickSwitch).ToList();
         if (quickSwitchProfiles.Count < 2) return;
-        var current = Profiles[CurrentIndex];
+        var current = Profiles[Math.Max(CurrentIndex, 0)];
         var currentIndex = quickSwitchProfiles.IndexOf(current);
         var next = quickSwitchProfiles[(currentIndex + 1) % quickSwitchProfiles.Count];
         Console.WriteLine("Switching from {0} to profile {1}", current.Name, next.Name);
         SwitchTo(next);
+    }
+
+    public void RemoveProfileItem(ProfileItem item)
+    {
+        var index = Profiles.IndexOf(item);
+        if (index < 0 || index >= Profiles.Count) return;
+        Profiles.RemoveAt(index);
+        var profileFileNamesIndex = ProfileFileNames.FindIndex(p => p.Item1 == item);
+        if (profileFileNamesIndex < 0 || profileFileNamesIndex >= ProfileFileNames.Count) return;
+        ProfileFileNames.RemoveAt(profileFileNamesIndex);
+        File.Delete(Path.Combine(profileDir, item.Name + ".json"));
+        Console.WriteLine("Removing {0}", item.Name);
+        ProfileCollectionChanged?.Invoke(index, item);
     }
 
     public bool IsSelected(ProfileItem profileItem)
