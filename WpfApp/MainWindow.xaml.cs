@@ -29,6 +29,7 @@ namespace WpfApp
             ProfileManager = profileManager;
             InitializeComponent();
             icon.DoubleClick = () => Restore();
+            icon.AppShouldClose = () => Close();
         }
 
         protected override void OnSourceInitialized(EventArgs e)

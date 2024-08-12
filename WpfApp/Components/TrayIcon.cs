@@ -41,6 +41,7 @@ public sealed class TrayIcon : IDisposable
     private readonly NotifyIcon icon;
     private readonly ProfileManager profileManager;
     public Action DoubleClick = () => { };
+    public Action AppShouldClose = () => { };
 
     public TrayIcon(ProfileManager profileManager)
     {
@@ -77,6 +78,10 @@ public sealed class TrayIcon : IDisposable
         menu.Items.Add(new ToolStripSeparator());
         var items = profileManager.Profiles.Select(profile => new ProfileItemToolStripItem(profileManager, profile, profileManager.IsSelected(profile))).ToArray();
         menu.Items.AddRange(items);
+        menu.Items.Add(new ToolStripSeparator());
+        var exit = new ToolStripMenuItem() { Text = "Exit", DisplayStyle = ToolStripItemDisplayStyle.Text };
+        exit.Click += (sender, e) => AppShouldClose.Invoke();
+        menu.Items.Add(exit);
         return menu;
     }
 

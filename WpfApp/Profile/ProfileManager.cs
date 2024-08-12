@@ -9,13 +9,14 @@ using MessageBox = System.Windows.Forms.MessageBox;
 
 namespace WpfApp.Profile;
 
-public sealed class ProfileManager(KeyboardManager keyboardManager)
+public sealed class ProfileManager(KeyboardManager keyboardManager, Settings settings)
 {
     public ObservableCollection<ProfileItem> Profiles { get; private set; } = [];
     public List<Tuple<ProfileItem, string>> ProfileFileNames { get; private set; } = [];
     private readonly JsonSerializerOptions options = new() { PropertyNameCaseInsensitive = true, WriteIndented = true };
-    private readonly string profileDir = Path.Combine(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), Path.GetFileNameWithoutExtension(Environment.ProcessPath ?? "")), "profiles");
+    private readonly string profileDir = Path.Combine(Program.APP_DIR, "profiles");
     private readonly KeyboardManager keyboardManager = keyboardManager;
+    private readonly Settings settings = settings;
     private int currentIndex = -1;
     public int CurrentIndex
     {
@@ -44,10 +45,21 @@ public sealed class ProfileManager(KeyboardManager keyboardManager)
             ProfileCollectionChanged?.Invoke(Profiles.Count - 1, profile);
         }
         ProfileFileNames = Profiles.Select(p => Tuple.Create(p, p.Name)).ToList();
-        var current = Math.Max(Profiles.FindIndex(p => p.IsDefault), 0);
-        if (current != CurrentIndex && current < Profiles.Count)
+        if (settings.LastProfileUsedName is { } s && !s.Equals(string.Empty))
         {
-            CurrentIndex = current;
+            var current = Profiles.FindIndex(p => p.Name.Equals(s));
+            if (current >= 0 && current != CurrentIndex && current < Profiles.Count)
+            {
+                CurrentIndex = current;
+            }
+            else
+            {
+                current = Math.Max(Profiles.FindIndex(p => p.IsDefault), 0);
+                if (current >= 0 && current != CurrentIndex && current < Profiles.Count)
+                {
+                    CurrentIndex = current;
+                }
+            }
         }
     }
 
@@ -137,6 +149,7 @@ public sealed class ProfileManager(KeyboardManager keyboardManager)
         }
         var current = Profiles[CurrentIndex];
         Console.WriteLine("Pushing profile {0} to keyboard", current.Name);
+        settings.LastProfileUsedName = current.Name;
         var packets = current.Profile.BuildPackets();
         keyboardManager.Keyboard?.Open().WritePacket(packets);
     }

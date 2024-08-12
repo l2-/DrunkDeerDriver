@@ -43,6 +43,8 @@ namespace WpfApp
     {
         public static void ConfigureServices(this IServiceCollection services)
         {
+            var settings = Settings.FromFile() ?? new Settings();
+            services.AddSingleton(settings);
             services.AddSingleton<WinEventHook>();
             services.AddSingleton<MainWindow>();
             services.AddSingleton<ProfileManager>();
