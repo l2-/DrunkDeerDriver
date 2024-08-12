@@ -1,17 +1,17 @@
 #### Note: !! Tested on Windows 10 with a Drunk Deer G65 Keyboard with firmware v0.48. Use at your own risk, I'm not responsible for what happens to your keyboard.
 #### Note: !! You can find the portable exe in Releases. Windows Defender might trigger for this App with a Wacatac Trojan warning. This is a false positive as reinforced by [the Virus total result](https://www.virustotal.com/gui/file/f8b5f5262351e7760a244d64f4bb181f05e62a9f06a921b7a1a9c2d7c945fd79), not a single virus scanner is triggered by the app.
 ### Unofficial Drunk Deer Driver
-This program allows for easy switching between profiles for drunk deer keyboards. Currently it supports importing profiles as made with the webdriver.
-Minimizing the program puts it in system tray. Exiting the program closes it. The startup shortcut points to the location of the exe so if the exe is moved you will need to unselect and select the start on windows startup again.
+This program allows for easy switching between profiles for drunk deer keyboards. Currently it supports importing profiles that were exported from the Drunk Deer webdriver.
+Minimizing the program puts it in system tray. Exiting the program closes it. The startup shortcut, created by checking Start on windows startup, points to the location of the exe so if the exe is moved you will need to unselect and select the start on windows startup again.
 
-For profiles in this program you can quickly switch between them in the following ways:
+This App allows you to switch between the profiles in the following ways:
 - *Right click the deer icon in the system tray and select one of the profiles there. The profile with the deer icon is the currently active one. Hover the deer icon in the tray to show the currently active one.
 - *Use Ctrl + Alt + Enter to cycle through the profiles that are marked as quick switch.
 - Select processes that will trigger a profile change, per profile. When 1 of these processes takes the foreground in windows the app will switch to the first associated profile.
 
 Note: The above marked with * do work.
 However, since the app will always push the (marked as) default profile when a process that is not associated with any profile takes the foreground, it will seem like it does not work.
-If you wish to specifically use those 2 methods I suggest not selecting any profile as default.dddd
+If you wish to specifically use those 2 methods I suggest not selecting any profile as default.
 
 ### Info
 Tested in the following environment:
