@@ -1,21 +1,17 @@
 ﻿using IWshRuntimeLibrary;
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.IO;
 using File = System.IO.File;
 
 namespace WpfApp;
 
 public static class StartupShortcutHelper
 {
-    private static readonly string app_name = "DrunkDeerDriver";
+    private static readonly string APP_NAME = Path.GetFileNameWithoutExtension(Environment.ProcessPath ?? "Drunk Deer Driver");
 
     private static string StartupFilePath()
     {
-        return Environment.GetFolderPath(Environment.SpecialFolder.Startup) + @"\" + app_name + ".lnk";
+        return Environment.GetFolderPath(Environment.SpecialFolder.Startup) + @"\" + APP_NAME + ".lnk";
     }
 
     public static bool StartupFileExists()
@@ -30,11 +26,10 @@ public static class StartupShortcutHelper
 
         if (StartupFileExists()) { File.Delete(shortcutAddress); }
 
-        System.Reflection.Assembly curAssembly = System.Reflection.Assembly.GetExecutingAssembly();
         IWshShortcut shortcut = shell.CreateShortcut(shortcutAddress);
-        shortcut.Description = "Logitech Battery Indicator";
+        shortcut.Description = "Drunk Deer Driver - Easy Keyboard Profile Switching";
         shortcut.WorkingDirectory = AppDomain.CurrentDomain.BaseDirectory;
-        var targetPath = curAssembly.Location.Replace(".dll", ".exe");
+        var targetPath = Environment.ProcessPath;
         if (targetPath is null || targetPath.Equals(string.Empty))
         {
             targetPath = Process.GetCurrentProcess().MainModule?.FileName;
