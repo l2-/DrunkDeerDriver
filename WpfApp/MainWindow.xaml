@@ -44,7 +44,10 @@
             </DataGrid.Columns>
 
         </DataGrid>
-        <Label Grid.Column="1" Name="CurrentProfileLabel" Content="Current Profile:" Margin="146,15,0,0" VerticalAlignment="Top" HorizontalAlignment="Left"/>
+        <StackPanel Orientation="Vertical" Margin="150,2,0,0" Grid.Column="1" VerticalAlignment="Top" HorizontalAlignment="Left">
+            <Label Name="CurrentConnectedKeyboard" Content="Connected to:"/>
+            <Label Name="CurrentProfileLabel" Content="Current Profile:"/>
+        </StackPanel>
         <CheckBox Grid.Column="1" Name="StartOnWindowsStartupToggle" Content="Start on windows startup" Margin="0,17,10,0" VerticalAlignment="Top" HorizontalAlignment="Right"/>
     </Grid>
 </Window>

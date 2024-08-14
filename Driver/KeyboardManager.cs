@@ -18,7 +18,20 @@ public sealed class KeyboardManager : IDisposable
         new KeyboardFilter { VendorId = 0x352d, ProductId = 0x2391, Usage = 0, UsagePage = 0xff00 }
     ];
 
-    public HidDevice? Keyboard { get; private set; }
+    public HidDevice? _keyboard;
+    public HidDevice? Keyboard
+    {
+        get { return _keyboard; }
+        set
+        {
+            if (!EqualityComparer<string?>.Default.Equals(_keyboard?.ToString(), value?.ToString()))
+            {
+                _keyboard = value;
+                ConnectedKeyboardChanged?.Invoke(_keyboard);
+            }
+        }
+    }
+    public event Action<HidDevice?>? ConnectedKeyboardChanged;
 
     public KeyboardManager() { Keyboard = FindKeyboard(); Register(); }
 
@@ -31,8 +44,11 @@ public sealed class KeyboardManager : IDisposable
 
     private static HidDevice? FindKeyboard()
     {
-        return DeviceList.Local.GetHidDevices().FirstOrDefault(IsDrunkDeerKeyboard);
+        return DeviceList.Local.GetHidDevices().FirstOrDefault(IsCompatibleKeyboard);
     }
+
+    public static bool IsCompatibleKeyboard(HidDevice device)
+        => IsDrunkDeerKeyboard(device) && device.IsCompatible();
 
     public static bool IsDrunkDeerKeyboard(HidDevice device)
     {

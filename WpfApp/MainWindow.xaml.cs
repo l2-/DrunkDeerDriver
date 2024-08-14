@@ -1,4 +1,5 @@
 ﻿using Driver;
+using HidSharp;
 using System.Collections.Specialized;
 using System.Windows;
 using System.Windows.Controls;
@@ -21,12 +22,14 @@ namespace WpfApp
         private readonly Dictionary<int, KeyHandler> handlers = [];
         private readonly ProfileManager ProfileManager;
         private readonly WinEventHook WinEventHook;
+        private readonly KeyboardManager KeyboardManager;
         private ProcessSelector? processSelectorWindow;
 
-        public MainWindow(ProfileManager profileManager, WinEventHook winEventHook, TrayIcon icon)
+        public MainWindow(ProfileManager profileManager, WinEventHook winEventHook, TrayIcon icon, KeyboardManager keyboardManager)
         {
             WinEventHook = winEventHook;
             ProfileManager = profileManager;
+            KeyboardManager = keyboardManager;
             InitializeComponent();
             icon.DoubleClick = () => Restore();
             icon.AppShouldClose = () => Close();
@@ -44,6 +47,21 @@ namespace WpfApp
             dataGrid.ContextMenu = CreateDatagridContextMenu();
 
             WinEventHook.WinEventHookHandler += OnWinEventHook;
+
+            KeyboardManager.ConnectedKeyboardChanged += OnConnectedKeyboardChanged;
+            OnConnectedKeyboardChanged(KeyboardManager.Keyboard);
+        }
+
+        private void OnConnectedKeyboardChanged(HidDevice? keyboard)
+        {
+            if (keyboard is { } _keyboard)
+            {
+                CurrentConnectedKeyboard.Content = string.Format("Connected to: \t{0}", _keyboard.GetFriendlyName());
+            }
+            else
+            {
+                CurrentConnectedKeyboard.Content = "No Keyboard connected";
+            }
         }
 
         private void RefreshDataGrid()
@@ -57,7 +75,7 @@ namespace WpfApp
 
         private void ProfileChanged(int index, ProfileItem item)
         {
-            CurrentProfileLabel.Content = string.Format("Current Profile: {0}", item.Name);
+            CurrentProfileLabel.Content = string.Format("Current Profile: \t{0}", item.Name);
             ProfileManager.PushCurrentProfile();
         }
 
