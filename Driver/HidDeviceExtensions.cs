@@ -49,6 +49,7 @@ public static class HidDeviceExtensions
     public static byte[] WritePacket(this HidStream stream, byte[] packet)
     {
         if (packet.Length < 1) return [];
+        if (packet.Length > 63) { throw new Exception(string.Format("Packet of length {0}, probably should be < 64", packet.Length)); }
         Console.WriteLine("Writing packet \t{0}", packet.PacketToString());
 
         stream.Write([Packets.REPORT_ID, .. packet]);

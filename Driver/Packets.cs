@@ -32,6 +32,22 @@ public static class Packets
     public static byte GetUpstrokePoint(this Profile profile, int index)
         => ((byte)(profile.Keys_Array[index].Upstroke * 10)).Clamp(0, 36);
 
+    // correct order
+    // clear packet
+    // remap packets
+    // rtp packets (authorityPacket -> downLoadPacket)
+    // common switch packet
+
+    // common switch packet = 0xb5, 0x00, 0x1e, 0x01, 0x00, 0x00, 0x01, valueT (0x00), valueR (0x01), 0x00, if valueT == 1 then 0x00 otherwise rtp_lw, 0x00...x62
+
+    // clear up rtp packet = 0xAA, 0x00, 0x01, 0x00...x60
+
+    // Part of remap commands - buildPkt_remap_key_array
+    public static byte[][] BuildPacketsLastWin(this Profile profile)
+    {
+        return [[]];
+    }
+
     public static byte[] BuildPacketKeyPoint(this Profile profile, byte packetNumber, KeyPointType keyPointType)
     {
         var packet = new byte[PACKET_SIZE];

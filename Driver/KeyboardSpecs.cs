@@ -8,7 +8,9 @@ public sealed record KeyboardSpecs
     // Connection in use? Not sure if necessary to track.. for now we ignore
     public bool KbdLinkUsed { get; set; } = false;
     public int? TurboValue { get; set; }
-    public int? RTValue { get; set; }
+    public int? RapidTrigger { get; set; }
+    public int? RapidTriggerPlus { get; set; }
+    public int? LastWinValue { get; set; }
     public int? KeyboardType { get; set; }
 
     public KeyboardSpecs(byte[] packet)
@@ -20,7 +22,9 @@ public sealed record KeyboardSpecs
             KbdLinkUsed = false;
             FirmwareVersion = string.Format("0.{0}{1}", packet[8], packet[7]);
             TurboValue = packet[14];
-            RTValue = packet[15];
+            RapidTrigger = packet[15];
+            RapidTriggerPlus = packet[17];
+            LastWinValue = packet[18];
             //this.kbd_link_used = false;
             //this.firmware_version_string =
             //  "0." + byte9.toString() + byte8.toString();
