@@ -1,4 +1,5 @@
 ﻿using Driver;
+using HidSharp;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Data;
@@ -151,7 +152,11 @@ public sealed class ProfileManager(KeyboardManager keyboardManager, Settings set
         Console.WriteLine("Pushing profile {0} to keyboard", current.Name);
         settings.LastProfileUsedName = current.Name;
         var packets = current.Profile.BuildPackets();
-        keyboardManager.Keyboard?.Open().WritePacket(packets);
+        if (keyboardManager.KeyboardWithSpecs is { } keyboard)
+        {
+            using HidStream stream = keyboard.Keyboard.Open();
+            stream.WritePacket(packets);
+        }
     }
 
     public void QuickSwitchProfile()

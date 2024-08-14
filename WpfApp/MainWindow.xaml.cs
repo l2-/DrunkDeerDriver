@@ -49,14 +49,14 @@ namespace WpfApp
             WinEventHook.WinEventHookHandler += OnWinEventHook;
 
             KeyboardManager.ConnectedKeyboardChanged += OnConnectedKeyboardChanged;
-            OnConnectedKeyboardChanged(KeyboardManager.Keyboard);
+            OnConnectedKeyboardChanged(KeyboardManager.KeyboardWithSpecs);
         }
 
-        private void OnConnectedKeyboardChanged(HidDevice? keyboard)
+        private void OnConnectedKeyboardChanged(KeyboardWithSpecs? keyboardWithSpecs)
         {
-            if (keyboard is { } _keyboard)
+            if (keyboardWithSpecs is { } _keyboardWithSpecs)
             {
-                CurrentConnectedKeyboard.Content = string.Format("Connected to: \t{0}", _keyboard.GetFriendlyName());
+                CurrentConnectedKeyboard.Content = string.Format("Connected to: \t{0} \tFirmware: {1}", _keyboardWithSpecs.Keyboard.GetFriendlyName(), _keyboardWithSpecs.Specs.FirmwareVersion);
             }
             else
             {

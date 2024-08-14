@@ -18,33 +18,39 @@ public sealed class KeyboardManager : IDisposable
         new KeyboardFilter { VendorId = 0x352d, ProductId = 0x2391, Usage = 0, UsagePage = 0xff00 }
     ];
 
-    public HidDevice? _keyboard;
-    public HidDevice? Keyboard
+    public KeyboardWithSpecs? _keyboardWithSpecs;
+    public KeyboardWithSpecs? KeyboardWithSpecs
     {
-        get { return _keyboard; }
+        get { return _keyboardWithSpecs; }
         set
         {
-            if (!EqualityComparer<string?>.Default.Equals(_keyboard?.ToString(), value?.ToString()))
+            if (!EqualityComparer<string?>.Default.Equals(_keyboardWithSpecs?.Keyboard.ToString(), value?.Keyboard.ToString()))
             {
-                _keyboard = value;
-                ConnectedKeyboardChanged?.Invoke(_keyboard);
+                _keyboardWithSpecs = value;
+                ConnectedKeyboardChanged?.Invoke(_keyboardWithSpecs);
             }
         }
     }
-    public event Action<HidDevice?>? ConnectedKeyboardChanged;
+    public event Action<KeyboardWithSpecs?>? ConnectedKeyboardChanged;
 
-    public KeyboardManager() { Keyboard = FindKeyboard(); Register(); }
+    public KeyboardManager() { KeyboardWithSpecs = FindKeyboard(); Register(); }
 
     private void OnDeviceListChanged(object? sender, DeviceListChangedEventArgs e)
     {
-        if (Keyboard is not null && Keyboard.CanOpen) return;
+        if (KeyboardWithSpecs is { } keyboard && keyboard.Keyboard.CanOpen) return;
 
-        Keyboard = FindKeyboard();
+        KeyboardWithSpecs = FindKeyboard();
     }
 
-    private static HidDevice? FindKeyboard()
+    private static KeyboardWithSpecs? FindKeyboard()
     {
-        return DeviceList.Local.GetHidDevices().FirstOrDefault(IsCompatibleKeyboard);
+        var kb = DeviceList.Local.GetHidDevices().FirstOrDefault(IsCompatibleKeyboard);
+        if (kb is not { } keyboard)
+        {
+            return null;
+        }
+        using HidStream stream = keyboard.Open();
+        return (keyboard, stream.GetKeyboardSpecs());
     }
 
     public static bool IsCompatibleKeyboard(HidDevice device)
@@ -65,13 +71,13 @@ public sealed class KeyboardManager : IDisposable
     public void Dispose()
     {
         Unregister();
-        Keyboard = null;
+        KeyboardWithSpecs = null;
     }
 
     public bool IsConnected()
     {
-        if (Keyboard is null) return false;
-        using var stream = Keyboard.Open();
+        if (KeyboardWithSpecs is not { } keyboard) return false;
+        using var stream = keyboard.Keyboard.Open();
         return stream.Ping();
     }
 }
