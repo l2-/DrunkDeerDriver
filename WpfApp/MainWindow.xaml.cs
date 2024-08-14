@@ -79,7 +79,7 @@ namespace WpfApp
             ProfileManager.PushCurrentProfile();
         }
 
-        private void ProfilesChanged(int index, ProfileItem item)
+        private void ProfilesChanged(ProfileItem[] _)
         {
             RefreshDataGrid();
         }
@@ -120,13 +120,8 @@ namespace WpfApp
             {
                 if (menu.PlacementTarget is DataGrid grid)
                 {
-                    foreach (var selectedCell in grid.SelectedCells)
-                    {
-                        if (selectedCell.Item is ProfileItem item)
-                        {
-                            ProfileManager.RemoveProfileItem(item);
-                        }
-                    }
+                    var itemsToRemove = grid.SelectedCells.Select(sc => sc.Item).OfType<ProfileItem>().Distinct().ToArray();
+                    ProfileManager.RemoveProfileItems(itemsToRemove);
                 }
             }
             return menu;

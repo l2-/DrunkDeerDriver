@@ -33,18 +33,18 @@ public sealed class ProfileManager(KeyboardManager keyboardManager, Settings set
     }
 
     public event Action<int, ProfileItem>? CurrentProfileChanged;
-    public event Action<int, ProfileItem>? ProfileCollectionChanged;
+    public event Action<ProfileItem[]>? ProfileCollectionChanged;
 
     public void DiscoverProfiles()
     {
         var info = Directory.CreateDirectory(profileDir);
-        var profiles = info.EnumerateFiles().Where(f => Path.GetExtension(f.Name) == ".json").Select(f => FromJsonFile(f.FullName)).Where(p => p is not null).Select(p => p!);
-        foreach (var profile in profiles)
+        var discoveredProfiles = info.EnumerateFiles().Where(f => Path.GetExtension(f.Name) == ".json").Select(f => FromJsonFile(f.FullName)).Where(p => p is not null).Select(p => p!).ToArray();
+        foreach (var profile in discoveredProfiles)
         {
             profile.PropertyChanged += ProfileItemChanged;
             Profiles.Add(profile);
-            ProfileCollectionChanged?.Invoke(Profiles.Count - 1, profile);
         }
+        ProfileCollectionChanged?.Invoke(discoveredProfiles);
         ProfileFileNames = Profiles.Select(p => Tuple.Create(p, p.Name)).ToList();
         if (settings.LastProfileUsedName is { } s && !s.Equals(string.Empty))
         {
@@ -97,7 +97,7 @@ public sealed class ProfileManager(KeyboardManager keyboardManager, Settings set
             Save(profileItem);
             profileItem.PropertyChanged += ProfileItemChanged;
             Profiles.Add(profileItem);
-            ProfileCollectionChanged?.Invoke(Profiles.Count - 1, profileItem);
+            ProfileCollectionChanged?.Invoke([profileItem]);
         }
         catch (Exception e)
         {
@@ -170,17 +170,20 @@ public sealed class ProfileManager(KeyboardManager keyboardManager, Settings set
         SwitchTo(next);
     }
 
-    public void RemoveProfileItem(ProfileItem item)
+    public void RemoveProfileItems(params ProfileItem[] items)
     {
-        var index = Profiles.IndexOf(item);
-        if (index < 0 || index >= Profiles.Count) return;
-        Profiles.RemoveAt(index);
-        var profileFileNamesIndex = ProfileFileNames.FindIndex(p => p.Item1 == item);
-        if (profileFileNamesIndex < 0 || profileFileNamesIndex >= ProfileFileNames.Count) return;
-        ProfileFileNames.RemoveAt(profileFileNamesIndex);
-        File.Delete(Path.Combine(profileDir, item.Name + ".json"));
-        Console.WriteLine("Removing {0}", item.Name);
-        ProfileCollectionChanged?.Invoke(index, item);
+        if (items.Length == 0) return;
+
+        foreach (var item in items)
+        {
+            Profiles.Remove(item);
+            var profileFileNamesIndex = ProfileFileNames.FindIndex(p => p.Item1 == item);
+            if (profileFileNamesIndex < 0 || profileFileNamesIndex >= ProfileFileNames.Count) return;
+            ProfileFileNames.RemoveAt(profileFileNamesIndex);
+            File.Delete(Path.Combine(profileDir, item.Name + ".json"));
+            Console.WriteLine("Removing {0}", item.Name);
+        }
+        ProfileCollectionChanged?.Invoke(items);
     }
 
     public bool IsSelected(ProfileItem profileItem)

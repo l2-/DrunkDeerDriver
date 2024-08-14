@@ -90,7 +90,7 @@ public sealed class TrayIcon : IDisposable
         DoubleClick.Invoke();
     }
 
-    private void ProfileCollectionChanged(int index, ProfileItem item)
+    private void ProfileCollectionChanged(ProfileItem[] _)
     {
         icon.ContextMenuStrip = CreateContextMenu();
     }
