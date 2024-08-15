@@ -18,7 +18,9 @@ public static class Packets
 
     public readonly static byte REPORT_ID = 0x04;
     public readonly static byte PACKET_SIZE = 63;
-    public readonly static byte[] IDENTITY_PACKET = [0xa0, 0x02, ..new byte[61]];
+    public readonly static byte[] IDENTITY_PACKET = [0xa0, 0x02, .. new byte[61]];
+    public readonly static byte[] CLEAR_UP_RTP_PACKET = [0xaa, 0x00, 0x01, .. new byte[60]];
+    public readonly static byte[] COMMON_SWITCH_PACKET_BASE = [0xb5, 0x00, 0x1e, 0x01, 0x00, 0x00, 0x01, .. new byte[56]];
 
     public static byte Clamp(this byte value, byte a, byte b)
         => Math.Max(a, Math.Min(value, b));
@@ -32,9 +34,9 @@ public static class Packets
     public static byte GetUpstrokePoint(this Profile profile, int index)
         => ((byte)(profile.Keys_Array[index].Upstroke * 10)).Clamp(0, 36);
 
-    // correct order
-    // clear packet
+    // correct order -->
     // remap packets
+    // clear packet
     // rtp packets (authorityPacket -> downLoadPacket)
     // common switch packet
 
@@ -43,9 +45,56 @@ public static class Packets
     // clear up rtp packet = 0xAA, 0x00, 0x01, 0x00...x60
 
     // Part of remap commands - buildPkt_remap_key_array
-    public static byte[][] BuildPacketsLastWin(this Profile profile)
+
+    // TODO
+    private static byte[][] BuildPacketsRemapping(this Profile profile)
     {
-        return [[]];
+        List<byte[]> packets = [];
+        return [.. packets];
+    }
+
+    // TODO
+    private static byte[] BuildPacketRTPAuthority(this ReleaseDoubleTriggerRapidTriggerPlusSetting setting)
+    {
+        return [];
+    }
+
+    // TODO
+    private static byte[] BuildPacketRTPAuthorityDownload(this ReleaseDoubleTriggerRapidTriggerPlusSetting setting)
+    {
+        return [];
+    }
+
+    // TODO
+    private static byte[][] BuildPacketsRapidTriggerPlusSettings(this Profile profile)
+    {
+        List<byte[]> packets = [];
+        foreach (var _rtpSetting in profile.RTP?.Rdt_RtpSettings ?? [])
+        {
+            if (_rtpSetting is not { } rtpSetting) continue;
+            packets.Add(rtpSetting.BuildPacketRTPAuthority());
+            packets.Add(rtpSetting.BuildPacketRTPAuthorityDownload());
+        }
+        return [.. packets];
+    }
+
+    private static byte[] BuildCommonSwitchPacket(this Profile profile)
+    {
+        byte[] packet = [..COMMON_SWITCH_PACKET_BASE];
+        packet[7] = 0x00;
+        packet[8] = 0x01;
+        packet[10] = 0x00; // not sure. should be 'if valueT == 1 then 0x00 otherwise rtp_lw' or just rtp_lw
+        return packet;
+    }
+
+    public static byte[][] BuildPacketsRapidTriggerPlus(this Profile profile)
+    {
+        List<byte[]> packets = [];
+        packets.AddRange(profile.BuildPacketsRemapping());
+        packets.Add(CLEAR_UP_RTP_PACKET);
+        packets.AddRange(profile.BuildPacketsRapidTriggerPlusSettings());
+        packets.Add(profile.BuildCommonSwitchPacket());
+        return [.. packets];
     }
 
     public static byte[] BuildPacketKeyPoint(this Profile profile, byte packetNumber, KeyPointType keyPointType)
