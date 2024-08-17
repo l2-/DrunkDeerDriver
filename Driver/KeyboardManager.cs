@@ -44,17 +44,16 @@ public sealed class KeyboardManager : IDisposable
 
     private static KeyboardWithSpecs? FindKeyboard()
     {
-        var kb = DeviceList.Local.GetHidDevices().FirstOrDefault(IsCompatibleKeyboard);
+        var (kb, specs) = DeviceList.Local.GetHidDevices()
+            .Where(IsDrunkDeerKeyboard)
+            .Select(kb => (kb, kb.Open().Using(s => s.GetKeyboardSpecs())))
+            .Where(tuple => tuple.Item2.IsCompatible()).FirstOrDefault();
         if (kb is not { } keyboard)
         {
             return null;
         }
-        using HidStream stream = keyboard.Open();
-        return (keyboard, stream.GetKeyboardSpecs());
+        return (keyboard, specs);
     }
-
-    public static bool IsCompatibleKeyboard(HidDevice device)
-        => IsDrunkDeerKeyboard(device) && device.IsCompatible();
 
     public static bool IsDrunkDeerKeyboard(HidDevice device)
     {

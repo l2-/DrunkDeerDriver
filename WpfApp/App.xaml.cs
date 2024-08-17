@@ -43,7 +43,7 @@ namespace WpfApp
     {
         public static void ConfigureServices(this IServiceCollection services)
         {
-            var settings = Settings.FromFile() ?? new Settings();
+            var settings = Settings.FromFile() ?? new Settings() { SaveOnDirty = true };
             services.AddSingleton(settings);
             services.AddSingleton<WinEventHook>();
             services.AddSingleton<MainWindow>();

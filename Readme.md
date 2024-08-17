@@ -13,6 +13,10 @@ Note: The above marked with * do work.
 However, since the app will always push the (marked as) default profile when a process that is not associated with any profile takes the foreground, it will seem like it does not work.
 If you wish to specifically use those 2 methods I suggest not selecting any profile as default.
 
+### Changelog
+- v0.1 - Supports profiles and rapid trigger but not key remapping.
+- v0.2 - Added support for release double trigger, last win and key remapping.
+
 ### Info
 Tested in the following environment:
 - Windows 10 version 22H2

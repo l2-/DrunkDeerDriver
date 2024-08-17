@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using static Driver.Packets;
@@ -15,6 +16,32 @@ public static class Packets
         Downstroke = 0x04,
         Upstroke = 0x05
     }
+
+    public sealed record KeyRemapSettingExt
+    {
+        public required int KeyCmd { get; set; }
+        public required int KeyType { get; set; }
+        public required int KeyCode { get; set; }
+        public required int RtpNumber { get; set; }
+        public required int GroupNumber { get; set; }
+        public required int PosInGroup { get; set; }
+        public required bool RdtEnabled { get; set; }
+
+        public static KeyRemapSettingExt From(KeyRemapSetting keyRemapSetting)
+        {
+            return new KeyRemapSettingExt
+            {
+                KeyCmd = keyRemapSetting.KeyCmd,
+                KeyType = keyRemapSetting.KeyType,
+                KeyCode = keyRemapSetting.KeyCode,
+                RtpNumber = 0,
+                GroupNumber = 0,
+                PosInGroup = 0,
+                RdtEnabled = false,
+            };
+        }
+    }
+
 
     public readonly static byte REPORT_ID = 0x04;
     public readonly static byte PACKET_SIZE = 63;
@@ -46,54 +73,155 @@ public static class Packets
 
     // Part of remap commands - buildPkt_remap_key_array
 
-    // TODO
-    private static byte[][] BuildPacketsRemapping(this Profile profile)
+    private static void AdjustPacketRemapping(this KeyRemapSettingExt setting, byte[] packet, int charNumber, int zeroPos)
     {
-        List<byte[]> packets = [];
-        return [.. packets];
-    }
-
-    // TODO
-    private static byte[] BuildPacketRTPAuthority(this ReleaseDoubleTriggerRapidTriggerPlusSetting setting)
-    {
-        return [];
-    }
-
-    // TODO
-    private static byte[] BuildPacketRTPAuthorityDownload(this ReleaseDoubleTriggerRapidTriggerPlusSetting setting)
-    {
-        return [];
-    }
-
-    // TODO
-    private static byte[][] BuildPacketsRapidTriggerPlusSettings(this Profile profile)
-    {
-        List<byte[]> packets = [];
-        foreach (var _rtpSetting in profile.RTP?.Rdt_RtpSettings ?? [])
+        packet[zeroPos] = (byte)charNumber;
+        switch (setting.KeyType)
         {
-            if (_rtpSetting is not { } rtpSetting) continue;
-            packets.Add(rtpSetting.BuildPacketRTPAuthority());
-            packets.Add(rtpSetting.BuildPacketRTPAuthorityDownload());
+            case 0:
+                {
+                    packet[zeroPos + 1] = (byte)setting.KeyCmd;
+                    packet[zeroPos + 3] = (byte)setting.KeyCode;
+                }
+                break;
+            case 1:
+            case 2:
+                {
+                    packet[zeroPos + 1] = (byte)setting.KeyCmd;
+                    packet[zeroPos + 2] = (byte)setting.KeyCode;
+                }
+                break;
+            case 3:
+                {
+                    packet[zeroPos + 1] = (byte)setting.KeyCmd;
+                }
+                break;
+            case 4:
+                {
+                    packet[zeroPos + 1] = 0xf8;
+                    packet[zeroPos + 2] = (byte)setting.RtpNumber;
+                    packet[zeroPos + 3] = (byte)setting.GroupNumber;
+                    packet[zeroPos + 4] = (byte)setting.PosInGroup;
+                    packet[zeroPos + 5] = (byte)(setting.RdtEnabled ? 0x01 : 0x00);
+                }
+                break;
+        }
+    }
+
+    private static KeyRemapSettingExt[] MergeRemaps(this RemapProfile remapProfile)
+    {
+        return remapProfile.KeyCodeDefault.Select(KeyRemapSettingExt.From).ToArray();
+    }
+
+    private static byte[][] BuildPacketsRemapping(this ProfileItem profileItem, byte layer = 1)
+    {
+        List<byte[]> packets = [];
+        if (profileItem.RemapProfile is null)
+        {
+            Console.WriteLine("Failed to create remapping packets");
+            return [.. packets];
+        }
+        var keyRemappings = profileItem.RemapProfile.MergeRemaps();
+        if (keyRemappings.Length == 0 || keyRemappings.Any(k => k is null))
+        {
+            Console.WriteLine("Failed to create remapping packets, malformed remapping array");
+            return [.. packets];
+        }
+        if (keyRemappings.Length != 126 || keyRemappings.Any(i => i is null)) throw new Exception(string.Format("Malformed keyremappings, {0}", string.Join<KeyRemapSettingExt>(',', keyRemappings)));
+        for (int i = 0; i < (profileItem.Profile.RTP?.Lw_RtpSettings.Length ?? 0); i++)
+        {
+            var lwSetting = profileItem.Profile.RTP!.Lw_RtpSettings[i];
+            if (lwSetting.MainKey.Value is { } keyindex1 && lwSetting.TriggerKey.Value is { } keyindex2)
+            {
+                var keyRemapping1 = keyRemappings[keyindex1];
+                keyRemapping1.RdtEnabled = lwSetting.MainKey.Rdt;
+                keyRemapping1.GroupNumber = i;
+                keyRemapping1.RtpNumber = 0; // ?
+                keyRemapping1.PosInGroup = 0;
+                keyRemapping1.KeyType = 4;
+
+                var keyRemapping2 = keyRemappings[keyindex2];
+                keyRemapping2.RdtEnabled = lwSetting.TriggerKey.Rdt;
+                keyRemapping2.GroupNumber = i;
+                keyRemapping2.RtpNumber = 0; // ?
+                keyRemapping2.PosInGroup = 1;
+                keyRemapping2.KeyType = 4;
+            }
+        }
+        byte[] _packet = [0xa0, 0x02, 0x04, 0x00, 0x0e, layer, .. new byte[54], 0xa5, ..new byte[2]];
+        for (int pktNumber = 1; pktNumber <= 14; pktNumber++)
+        {
+            byte[] packet = (byte[])_packet.Clone();
+            packet[3] = (byte)pktNumber;
+            for (int charNumber = 0; charNumber < 9; charNumber++)
+            {
+                int i = (pktNumber - 1) * 9 + charNumber;
+                if (i >= 126)
+                {
+                    break;
+                }
+                var keyDesc = keyRemappings[i];
+                if (keyDesc.KeyCmd > 0)
+                {
+                    keyDesc.AdjustPacketRemapping(packet, i, 6 + charNumber * 6);
+                }
+            }
+            packets.Add(packet);
         }
         return [.. packets];
     }
 
-    private static byte[] BuildCommonSwitchPacket(this Profile profile)
+    private static byte[] BuildPacketRTPAuthority(byte rtpNumberInGroup)
     {
-        byte[] packet = [..COMMON_SWITCH_PACKET_BASE];
+        byte[] packet = [0x07, rtpNumberInGroup, 0x00, 0x2b, 0x01, .. new byte[58]];
+        return packet;
+    }
+
+    private static byte[] BuildPacketRTPAuthorityDownload(byte rtpNumberInGroup, byte keycode)
+    {
+        byte[] packet = [0xa8, rtpNumberInGroup, 0x01, 0x01, 0x01, 0x26, 0x01, .. new byte[30], 0x02, keycode, 0x01, 0x00, 0x6d, 0x03, keycode, .. new byte[19]];
+        return packet;
+    }
+
+    private static byte[][] BuildPacketsRapidTriggerPlusSettings(this ProfileItem profileItem)
+    {
+        List<byte[]> packets = [];
+        if (profileItem.RemapProfile is null || profileItem.Profile.RTP is null)
+        {
+            return [.. packets];
+        }
+
+        var settings = profileItem.Profile.RTP.Rdt_RtpSettings ?? [];
+        var keycodes = profileItem.RemapProfile.KeyCodeDefault.ToDictionary(kc => kc.KeyIndex, kc => (byte)kc.KeyCode);
+        for (int i = 0; i < settings.Length; i++)
+        {
+            if (settings[i] is not { } rtpSetting || !keycodes.TryGetValue(rtpSetting.MainKey.Value ?? -1, out var keycode)) continue;
+            packets.Add(BuildPacketRTPAuthority((byte)(i + 1)));
+            packets.Add(BuildPacketRTPAuthorityDownload((byte)(i + 1), keycode));
+        }
+        return [.. packets];
+    }
+
+    private static byte[] BuildCommonSwitchPacket()
+    {
+        byte[] packet = [.. COMMON_SWITCH_PACKET_BASE];
         packet[7] = 0x00;
         packet[8] = 0x01;
         packet[10] = 0x00; // not sure. should be 'if valueT == 1 then 0x00 otherwise rtp_lw' or just rtp_lw
         return packet;
     }
 
-    public static byte[][] BuildPacketsRapidTriggerPlus(this Profile profile)
+    public static byte[][] BuildPacketsRapidTriggerPlus(this ProfileItem profileItem)
     {
         List<byte[]> packets = [];
-        packets.AddRange(profile.BuildPacketsRemapping());
+        if (profileItem.Profile.RTP is null || profileItem.RemapProfile is null) // For now needs a remapping to figure out keys on the keyboard
+        {
+            return [.. packets];
+        }
+        packets.AddRange(profileItem.BuildPacketsRemapping());
         packets.Add(CLEAR_UP_RTP_PACKET);
-        packets.AddRange(profile.BuildPacketsRapidTriggerPlusSettings());
-        packets.Add(profile.BuildCommonSwitchPacket());
+        packets.AddRange(profileItem.BuildPacketsRapidTriggerPlusSettings());
+        packets.Add(BuildCommonSwitchPacket());
         return [.. packets];
     }
 
@@ -135,9 +263,10 @@ public static class Packets
         return packet;
     }
 
-    public static byte[][] BuildPackets(this Profile profile)
+    public static byte[][] BuildPackets(this ProfileItem profileItem)
     {
         List<byte[]> packets = [];
+        var profile = profileItem.Profile;
         packets.Add(profile.BuildPacketKeyPoint(0, KeyPointType.ActuationPoint));
         packets.Add(profile.BuildPacketKeyPoint(1, KeyPointType.ActuationPoint));
         packets.Add(profile.BuildPacketKeyPoint(2, KeyPointType.ActuationPoint));
@@ -147,6 +276,8 @@ public static class Packets
         packets.Add(profile.BuildPacketKeyPoint(0, KeyPointType.Upstroke));
         packets.Add(profile.BuildPacketKeyPoint(1, KeyPointType.Upstroke));
         packets.Add(profile.BuildPacketKeyPoint(2, KeyPointType.Upstroke));
+
+        packets.AddRange(profileItem.BuildPacketsRapidTriggerPlus());
         return [.. packets];
     }
 }

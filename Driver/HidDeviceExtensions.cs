@@ -28,7 +28,7 @@ public static class HidDeviceExtensions
     }
 
     public static string PacketToString(this byte[] packet)
-        => string.Format("[{0}]", string.Join(",", packet.Select(b => string.Format("{0:X2}", b))));
+        => string.Format("[{0}]", string.Join(" ", packet.Select(b => string.Format("{0:x2}", b))));
 
     public static bool WritePacket(this HidStream stream, byte[][] packets)
     {
@@ -49,13 +49,34 @@ public static class HidDeviceExtensions
     public static byte[] WritePacket(this HidStream stream, byte[] packet)
     {
         if (packet.Length < 1) return [];
-        if (packet.Length > 63) { throw new Exception(string.Format("Packet of length {0}, probably should be < 64", packet.Length)); }
+        if (packet.Length > 63)
+        {
+            throw new Exception(string.Format("Packet {0}, probably should be of length < 64", PacketToString(packet)));
+        }
+        if (packet.Length < 63)
+        {
+            Console.WriteLine(string.Format("Packet {0}, probably should be of length 64. {1}", PacketToString(packet), new System.Diagnostics.StackTrace()));
+        }
         Console.WriteLine("Writing packet \t{0}", packet.PacketToString());
-
-        stream.Write([Packets.REPORT_ID, .. packet]);
-        var response = stream.Read();
-        Console.WriteLine("Received packet {0}", response.Skip(1).ToArray().PacketToString());
-        return response.Skip(1).ToArray();
+        try
+        {
+            stream.Write([Packets.REPORT_ID, .. packet]);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("FAILED TO WRITE PACKET {0}, {1}", packet, ex);
+        }
+        try
+        {
+            var response = stream.Read();
+            Console.WriteLine("Received packet {0}", response.Skip(1).ToArray().PacketToString());
+            return response.Skip(1).ToArray();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("FAILED TO READ PACKET {0}", ex);
+        }
+        return [];
     }
 
 
@@ -65,6 +86,6 @@ public static class HidDeviceExtensions
     public static KeyboardSpecs GetKeyboardSpecs(this HidStream stream)
         => new(stream.WritePacket(Packets.IDENTITY_PACKET));
 
-    public static bool IsCompatible(this HidDevice device)
-        => device.Open().Using(s => s.GetKeyboardSpecs()).KeyboardType is not null;
+    public static bool IsCompatible(this KeyboardSpecs specs)
+        => specs.KeyboardType is not null;
 }

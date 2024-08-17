@@ -1,5 +1,4 @@
 ﻿using Driver;
-using HidSharp;
 using System.Collections.Specialized;
 using System.Windows;
 using System.Windows.Controls;
@@ -56,7 +55,9 @@ namespace WpfApp
         {
             if (keyboardWithSpecs is { } _keyboardWithSpecs)
             {
-                CurrentConnectedKeyboard.Content = string.Format("Connected to: \t{0} \tFirmware: {1}", _keyboardWithSpecs.Keyboard.GetFriendlyName(), _keyboardWithSpecs.Specs.FirmwareVersion);
+                CurrentConnectedKeyboard.Content = string.Format("Connected to: \t{0} \tfirmware v{1}",
+                    _keyboardWithSpecs.Keyboard.GetFriendlyName(),
+                    _keyboardWithSpecs.Specs.FirmwareVersion);
             }
             else
             {
@@ -151,7 +152,29 @@ namespace WpfApp
             base.OnClosed(e);
         }
 
-        protected void OnImportButtonCLicked(object sender, EventArgs e)
+        protected void OnImportRemapButtonClicked(object sender, EventArgs e)
+        {
+            if (sender is System.Windows.Controls.Button button && button.DataContext is ProfileItem item)
+            {
+                // Configure open file dialog box
+                var dialog = new OpenFileDialog
+                {
+                    DefaultExt = ".json", // Default file extension
+                    Filter = "Text documents (.json)|*.json", // Filter files by extension
+                };
+
+                // Show open file dialog box
+                bool? result = dialog.ShowDialog();
+
+                // Process open file dialog box results
+                if (result == true)
+                {
+                    ProfileManager.ImportAndLinkRemaps(item, dialog.FileName);
+                }
+            }
+        }
+
+        protected void OnImportButtonClicked(object sender, EventArgs e)
         {
             // Configure open file dialog box
             var dialog = new OpenFileDialog

@@ -81,6 +81,22 @@ public sealed class ProfileManager(KeyboardManager keyboardManager, Settings set
         return null;
     }
 
+    public void ImportAndLinkRemaps(ProfileItem item, string path)
+    {
+        try
+        {
+            var text = File.ReadAllText(path);
+            var remaps = JsonSerializer.Deserialize<Driver.RemapProfile>(text, options);
+            if (remaps is null) { Console.WriteLine("Failed importing {0}!", path); return; }
+            item.RemapProfile = remaps;
+            Save(item);
+        }
+        catch (Exception e)
+        {
+            MessageBox.Show(e.Message);
+        }
+    }
+
     public void ImportProfile(string path)
     {
         try
@@ -150,13 +166,13 @@ public sealed class ProfileManager(KeyboardManager keyboardManager, Settings set
         }
         var current = Profiles[CurrentIndex];
         Console.WriteLine("Pushing profile {0} to keyboard", current.Name);
-        settings.LastProfileUsedName = current.Name;
-        var packets = current.Profile.BuildPackets();
+        var packets = current.BuildPackets();
         if (keyboardManager.KeyboardWithSpecs is { } keyboard)
         {
             using HidStream stream = keyboard.Keyboard.Open();
             stream.WritePacket(packets);
         }
+        settings.LastProfileUsedName = current.Name;
     }
 
     public void QuickSwitchProfile()

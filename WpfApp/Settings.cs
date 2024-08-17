@@ -6,7 +6,7 @@ using Path = System.IO.Path;
 
 namespace WpfApp;
 
-public record Settings : INotifyPropertyChanged
+public record Settings() : INotifyPropertyChanged
 {
     private static readonly JsonSerializerOptions options = new() { PropertyNameCaseInsensitive = true, WriteIndented = true };
     private static readonly string SETTINGS_FILE_PATH = Path.Combine(Program.APP_DIR, "settings.json");
@@ -16,6 +16,8 @@ public record Settings : INotifyPropertyChanged
 
     [JsonIgnore]
     public bool IsDirty { get; set; }
+    [JsonIgnore]
+    public bool SaveOnDirty { get; set; } = false;
     public event PropertyChangedEventHandler? PropertyChanged;
 
     public string LastProfileUsedName
@@ -37,10 +39,14 @@ public record Settings : INotifyPropertyChanged
     protected virtual void OnPropertyChanged(string propertyName)
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        Save();
+        if (SaveOnDirty && IsDirty)
+        {
+            Save();
+        }
+        IsDirty = false;
     }
 
-    private void Save()
+    public void Save()
     {
         var json = JsonSerializer.Serialize(this, options);
         File.WriteAllText(SETTINGS_FILE_PATH, json);
@@ -57,6 +63,7 @@ public record Settings : INotifyPropertyChanged
             if (settings != null)
             {
                 settings.IsDirty = false;
+                settings.SaveOnDirty = true;
             }
             return settings;
         }

@@ -20,27 +20,27 @@ namespace Driver;
 public abstract record RapidTriggerPlusKey
 {
     // Dont save bloat
-    //public string? ClassName;
-    //public int? Value;
-    //public string? Name;
-    //public bool? IsBorder;
-    //public int? Height;
-    public required string Keyname;
-    public required int Action_Point;
-    public required int Downstroke;
-    public required int Upstroke;
+    //public string? ClassName { get; set; }
+    //public string? Name { get; set; }
+    //public bool? IsBorder { get; set; }
+    //public int? Height { get; set; }
+    public int? Value { get; set; }
+    public required string Keyname { get; set; }
+    public required decimal Action_Point { get; set; }
+    public required decimal Downstroke { get; set; }
+    public required decimal Upstroke { get; set; }
 }
 
 public sealed record ReleaseDoubleTriggerKey : RapidTriggerPlusKey
 {
-    public required bool Rdt;
+    public required bool Rdt { get; set; }
 }
 
 public sealed record LastWinTriggerKey : RapidTriggerPlusKey
 {
-    public bool? Rdt;
-    public object? Rdt_; // ReleaseDoubleTriggerKey? property loop?
-    public required int LwIndex;
+    public bool? Rdt { get; set; }
+    public object? Rdt_ { get; set; } // ReleaseDoubleTriggerKey? property loop?
+    public required int LwIndex { get; set; }
 }
 /*
  * currentRDT: {
@@ -75,31 +75,31 @@ public sealed record LastWinTriggerKey : RapidTriggerPlusKey
  */
 public sealed record ReleaseDoubleTriggerRapidTriggerPlusSetting
 {
-    public required bool IsRdtEnabled;
-    public required ReleaseDoubleTriggerKey MainKey;
-    public required ReleaseDoubleTriggerKey TriggerKey;
-    public required int X2Reset;
-    public required int Y2Active;
+    public required bool IsRdtEnabled { get; set; }
+    public required ReleaseDoubleTriggerKey MainKey { get; set; }
+    public required ReleaseDoubleTriggerKey TriggerKey { get; set; }
+    public required int X2Reset { get; set; }
+    public required int Y2Active { get; set; }
 }
 
 public sealed record LastWinRapidTriggerPlusSetting
 {
-    public required bool IsRdtEnabled;
-    public required ReleaseDoubleTriggerKey MainKey;
-    public required ReleaseDoubleTriggerKey TriggerKey;
+    public required bool IsRdtEnabled { get; set; }
+    public required ReleaseDoubleTriggerKey MainKey { get; set; }
+    public required ReleaseDoubleTriggerKey TriggerKey { get; set; }
 }
 
 public sealed record RapidTriggerPlus
 {
-    public required ReleaseDoubleTriggerRapidTriggerPlusSetting[] Rdt_RtpSettings;
-    public required bool Rdt_Watch_Change;
-    public required LastWinTriggerKey[][] Lw_Temp_list;
-    public required LastWinRapidTriggerPlusSetting[] Lw_RtpSettings;
-    public required bool LW_Watch_Change;
-    public required string Rtp_Model;
+    public required ReleaseDoubleTriggerRapidTriggerPlusSetting[] Rdt_RtpSettings { get; set; }
+    public required bool Rdt_Watch_Change { get; set; }
+    public required LastWinTriggerKey[][] Lw_Temp_list { get; set; }
+    public required LastWinRapidTriggerPlusSetting[] Lw_RtpSettings { get; set; }
+    public required bool Lw_Watch_Change { get; set; }
+    public required string Rtp_Model { get; set; }
 
-    //public bool Rdt_Open = false; // dont care
-    //public bool Lw_Open = false; // dont care
+    //public bool Rdt_Open = false { get; set; } // dont care
+    //public bool Lw_Open = false { get; set; } // dont care
 }
 
 public sealed record KeySetting
@@ -123,7 +123,7 @@ public sealed record KeyRemapSetting
     public required int KeyIndex { get; set; }
     public required string KeyText { get; set; }
     public required int KeyCmd { get; set; }
-    //public required int KeyType { get; set; } // Probably not needed because the array this setting is in also shows the type of setting
+    public required int KeyType { get; set; }
     public required int KeyCode { get; set; }
 }
 
@@ -131,10 +131,10 @@ public sealed record RemapProfile
 {
     public required string Storagename { get; set; }
     public required string Showname { get; set; }
-    public required KeySetting[] KeyCodeDefault { get; set; }
+    public required KeyRemapSetting[] KeyCodeDefault { get; set; }
     public required Dictionary<string, int> HotKeyMap { get; set; }
-    public required KeySetting[] KeyCodeFn1 { get; set; }
-    public required KeySetting[] KeyCodeFn2 { get; set; }
+    public required KeyRemapSetting[] KeyCodeFn1 { get; set; }
+    public required KeyRemapSetting[] KeyCodeFn2 { get; set; }
 }
 
 public record ProfileItem : INotifyPropertyChanged

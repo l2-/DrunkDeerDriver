@@ -21,10 +21,10 @@ public sealed record KeyboardSpecs
         {
             KbdLinkUsed = false;
             FirmwareVersion = string.Format("0.{0}{1}", packet[8], packet[7]);
-            TurboValue = packet[14];
-            RapidTrigger = packet[15];
-            RapidTriggerPlus = packet[17];
-            LastWinValue = packet[18];
+            TurboValue = packet[15];
+            RapidTrigger = packet[16];
+            RapidTriggerPlus = packet[18];
+            LastWinValue = packet[19];
             //this.kbd_link_used = false;
             //this.firmware_version_string =
             //  "0." + byte9.toString() + byte8.toString();

@@ -19,7 +19,7 @@
             <ColumnDefinition Width="41*"/>
             <ColumnDefinition Width="759*"/>
         </Grid.ColumnDefinitions>
-        <Button Grid.Column="0" Content="Import Profile" Click="OnImportButtonCLicked" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Grid.ColumnSpan="2" Width="172"/>
+        <Button Grid.Column="0" Content="Import Profile" Click="OnImportButtonClicked" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Grid.ColumnSpan="2" Width="172"/>
         <DataGrid HeadersVisibility="Column" Grid.Column="0" Name="dataGrid"  Margin="10,54,10,10"
          AlternationCount = "2" AutoGenerateColumns = "False" CanUserAddRows="False" Grid.ColumnSpan="2">
             <DataGrid.Columns>
@@ -27,7 +27,7 @@
                 <DataGridTemplateColumn Header="Remap Profile" Width="SizeToHeader">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <Button Content="{Binding RemapProfile.Showname, FallbackValue='Import'}"></Button>
+                            <Button Click="OnImportRemapButtonClicked" Content="{Binding RemapProfile.Showname, FallbackValue='Import'}"></Button>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
